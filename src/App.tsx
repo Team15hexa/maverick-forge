@@ -20,11 +20,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={
-            <ProtectedRoute>
-              <RoleSelection />
-            </ProtectedRoute>
-          } />
+          <Route path="/" element={<Login />} />
           <Route path="/fresher-dashboard" element={
             <ProtectedRoute requiredRole="fresher">
               <FresherDashboard />
