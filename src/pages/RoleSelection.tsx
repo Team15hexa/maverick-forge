@@ -1,16 +1,34 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, Settings, Users, TrendingUp } from "lucide-react";
+import { GraduationCap, Settings, Users, LogOut } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const RoleSelection = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("userRole");
+    toast({ title: "Logged out successfully" });
+    navigate("/login");
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 relative">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleLogout}
+            className="absolute top-0 right-0"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="p-3 rounded-lg bg-gradient-to-r from-training-primary to-training-secondary">
               <GraduationCap className="w-8 h-8 text-white" />
