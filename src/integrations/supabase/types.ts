@@ -14,16 +14,183 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activities: {
+        Row: {
+          admin_id: string | null
+          created_at: string
+          description: string
+          fresher_id: string | null
+          id: string
+          metadata: Json | null
+          type: string
+        }
+        Insert: {
+          admin_id?: string | null
+          created_at?: string
+          description: string
+          fresher_id?: string | null
+          id?: string
+          metadata?: Json | null
+          type: string
+        }
+        Update: {
+          admin_id?: string | null
+          created_at?: string
+          description?: string
+          fresher_id?: string | null
+          id?: string
+          metadata?: Json | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_fresher_id_fkey"
+            columns: ["fresher_id"]
+            isOneToOne: false
+            referencedRelation: "freshers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      freshers: {
+        Row: {
+          avatar_url: string | null
+          batch: string
+          created_at: string
+          department: string
+          email: string
+          enrollment_date: string
+          id: string
+          name: string
+          phone: string | null
+          status: Database["public"]["Enums"]["fresher_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          batch: string
+          created_at?: string
+          department: string
+          email: string
+          enrollment_date?: string
+          id?: string
+          name: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["fresher_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          batch?: string
+          created_at?: string
+          department?: string
+          email?: string
+          enrollment_date?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["fresher_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      quiz_results: {
+        Row: {
+          completed: boolean
+          correct_answers: number
+          created_at: string
+          fresher_id: string
+          id: string
+          quiz_date: string
+          score: number
+          time_taken: number | null
+          total_questions: number
+        }
+        Insert: {
+          completed?: boolean
+          correct_answers: number
+          created_at?: string
+          fresher_id: string
+          id?: string
+          quiz_date?: string
+          score: number
+          time_taken?: number | null
+          total_questions?: number
+        }
+        Update: {
+          completed?: boolean
+          correct_answers?: number
+          created_at?: string
+          fresher_id?: string
+          id?: string
+          quiz_date?: string
+          score?: number
+          time_taken?: number | null
+          total_questions?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_results_fresher_id_fkey"
+            columns: ["fresher_id"]
+            isOneToOne: false
+            referencedRelation: "freshers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_queues: {
+        Row: {
+          created_at: string
+          error_count: number
+          id: string
+          last_updated: string
+          pending_count: number
+          processed_count: number
+          queue_name: string
+          status: Database["public"]["Enums"]["queue_status"]
+        }
+        Insert: {
+          created_at?: string
+          error_count?: number
+          id?: string
+          last_updated?: string
+          pending_count?: number
+          processed_count?: number
+          queue_name: string
+          status?: Database["public"]["Enums"]["queue_status"]
+        }
+        Update: {
+          created_at?: string
+          error_count?: number
+          id?: string
+          last_updated?: string
+          pending_count?: number
+          processed_count?: number
+          queue_name?: string
+          status?: Database["public"]["Enums"]["queue_status"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_average_score: {
+        Args: { fresher_uuid: string }
+        Returns: number
+      }
+      get_completion_rate: {
+        Args: { fresher_uuid: string }
+        Returns: number
+      }
     }
     Enums: {
-      [_ in never]: never
+      fresher_status: "active" | "inactive" | "completed" | "dropped"
+      queue_status: "operational" | "warning" | "critical" | "maintenance"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +317,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      fresher_status: ["active", "inactive", "completed", "dropped"],
+      queue_status: ["operational", "warning", "critical", "maintenance"],
+    },
   },
 } as const
