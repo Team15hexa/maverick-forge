@@ -5,10 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, CheckCircle, Clock, AlertCircle, Award, BookOpen, Code, FileText, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import Quiz from "@/components/Quiz";
 
 const FresherDashboard = () => {
   const navigate = useNavigate();
   const [overallProgress, setOverallProgress] = useState(0);
+  const [showQuiz, setShowQuiz] = useState(false);
 
   // Mock data for fresher progress
   const fresherData = {
@@ -93,6 +95,28 @@ const FresherDashboard = () => {
         return "outline";
     }
   };
+
+  const handleQuizComplete = (score: number, totalQuestions: number) => {
+    // Update the daily quiz module status
+    const updatedModules = trainingModules.map(module => 
+      module.title === "Daily Quiz" 
+        ? { ...module, status: "completed", score: `${score}/${totalQuestions}`, lastUpdated: "Just now" }
+        : module
+    );
+    console.log("Quiz completed with score:", score, "/", totalQuestions);
+  };
+
+  const handleStartQuiz = () => {
+    setShowQuiz(true);
+  };
+
+  const handleCloseQuiz = () => {
+    setShowQuiz(false);
+  };
+
+  if (showQuiz) {
+    return <Quiz onComplete={handleQuizComplete} onClose={handleCloseQuiz} />;
+  }
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -271,7 +295,7 @@ const FresherDashboard = () => {
 
             {/* Action Buttons */}
             <div className="space-y-3">
-              <Button variant="training" className="w-full">
+              <Button variant="training" className="w-full" onClick={handleStartQuiz}>
                 Start Today's Quiz
               </Button>
               <Button variant="outline" className="w-full">
