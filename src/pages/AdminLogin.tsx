@@ -4,11 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate, Link } from "react-router-dom";
-import { GraduationCap, Eye, EyeOff, RefreshCw, Shield } from "lucide-react";
+import { Shield, Eye, EyeOff, RefreshCw, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-const Login = () => {
+const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -39,20 +39,16 @@ const Login = () => {
       if (error) throw error;
 
       if (data.user) {
-        // Check if user has a fresher profile
-        const { data: fresher } = await supabase
-          .from('freshers')
-          .select('id')
-          .eq('user_id', data.user.id)
-          .single();
-
-        if (fresher) {
-          navigate('/fresher-dashboard');
-          toast({ title: "Welcome!", description: "Redirecting to your dashboard..." });
+        // Check if user is admin by checking email or metadata
+        const isAdmin = data.user.email?.includes('admin') || data.user.user_metadata?.role === 'admin';
+        
+        if (isAdmin) {
+          navigate('/admin-dashboard');
+          toast({ title: "Welcome Admin!", description: "Redirecting to admin dashboard..." });
         } else {
           toast({
             title: "Access Denied",
-            description: "No fresher profile found. Please contact your administrator.",
+            description: "This login is for administrators only",
             variant: "destructive"
           });
           await supabase.auth.signOut();
@@ -63,7 +59,7 @@ const Login = () => {
       console.error('Login error:', error);
       toast({
         title: "Login Failed",
-        description: error.message || "Invalid email or password",
+        description: error.message || "Invalid admin credentials",
         variant: "destructive"
       });
     } finally {
@@ -76,23 +72,23 @@ const Login = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 rounded-lg bg-gradient-to-r from-training-primary to-training-secondary">
-              <GraduationCap className="w-6 h-6 text-white" />
+            <div className="p-3 rounded-lg bg-gradient-to-r from-destructive to-destructive/80">
+              <Shield className="w-6 h-6 text-white" />
             </div>
-            <CardTitle className="text-2xl">Mavericks Training</CardTitle>
+            <CardTitle className="text-2xl">Admin Portal</CardTitle>
           </div>
           <CardDescription>
-            Student access to training dashboard
+            Administrator access to training management
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Admin Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder="Enter admin email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -104,7 +100,7 @@ const Login = () => {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="Enter admin password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -128,30 +124,21 @@ const Login = () => {
               type="submit" 
               className="w-full" 
               disabled={isLoading}
-              variant="training"
+              variant="destructive"
             >
               {isLoading && <RefreshCw className="w-4 h-4 mr-2 animate-spin" />}
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? "Signing in..." : "Admin Sign In"}
             </Button>
           </form>
           
-          <div className="mt-6 space-y-4">
-            <div className="flex items-center justify-center">
-              <Link 
-                to="/admin-login" 
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Shield className="w-4 h-4" />
-                Administrator Login
-              </Link>
-            </div>
-            
-            <div className="p-4 bg-muted/50 rounded-lg">
-              <h4 className="font-medium text-sm mb-2">Student Login:</h4>
-              <div className="text-xs text-muted-foreground">
-                Use the email and password provided by your admin to access your training dashboard.
-              </div>
-            </div>
+          <div className="mt-6 flex items-center justify-center">
+            <Link 
+              to="/login" 
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Student Login
+            </Link>
           </div>
         </CardContent>
       </Card>
@@ -159,4 +146,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default AdminLogin;
