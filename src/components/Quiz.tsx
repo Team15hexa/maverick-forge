@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,76 +19,12 @@ interface QuizProps {
   onClose: () => void;
 }
 
-// const Quiz = ({ onComplete, onClose }: QuizProps) => {
-//   const { toast } = useToast();
-//   const [currentQuestion, setCurrentQuestion] = useState(0);
-//   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
-//   const [showResults, setShowResults] = useState(false);
-//   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
-
-//  useEffect(() => {
-//     const timer = setInterval(() => {
-//       setTimeLeft(prevTime => {
-//         if (prevTime <= 0) {
-//           clearInterval(timer);
-//           setShowResults(true);
-//           return 0;
-//         }
-//         return prevTime - 1;
-//       });
-//     }, 1000);
-//     return () => clearInterval(timer);
-//   }, []);
-
-
 const Quiz = ({ onComplete, onClose }: QuizProps) => {
-  const {toast} = useToast();
+  const { toast } = useToast();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [showResults, setShowResults] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(60); // 60 seconds
-  const [questionAnswered, setQuestionAnswered] = useState(false);
-  useEffect(() => {
-    if (currentQuestion < questions.length) {
-      const timer = setInterval(() => {
-        setTimeLeft(prevTime => {
-          if (prevTime <= 1) {
-            clearInterval(timer);
-            markQuestionAsWrong();
-            moveToNextQuestion();
-            return 60; // Reset timer for the next question
-          }
-          return prevTime - 1;
-        });
-        }, 1000);
-      
-      return () => clearInterval(timer); // Cleanup on unmount
-    }
-  }, [currentQuestion]);
-  const markQuestionAsWrong = () => {
-    if (!questionAnswered) {
-      // Logic to mark the question as wrong
-        toast({
-        title: "Time's up!",
-        description: "You didn't answer this question in time.",
-         
-        duration: 5000,
-        
-      });
-       }
-  };
-  const moveToNextQuestion = () => {
-    setQuestionAnswered(false); // Reset for the next question
-    setCurrentQuestion(prev => prev + 1); // Move to the next question
-    setTimeLeft(60); // Reset the timer for the new question
-  };
-  const handleAnswerSelection = (answer: number) => {
-    setSelectedAnswers(prev => [...prev, answer]);
-    setQuestionAnswered(true);
-    setTimeLeft(60); // Reset timer on answer selection
-  };
-
-
+  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
 
   // Random quiz questions pool
   const allQuestions: Question[] = [
