@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, Eye, EyeOff } from "lucide-react";
+import { GraduationCap, Eye, EyeOff, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -15,36 +16,52 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Hardcoded credentials
-  const credentials = {
-    admin: { email: "admin@mavericks.com", password: "admin123" },
-    fresher: { email: "fresher@mavericks.com", password: "fresher123" }
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    // Simple credential check
-    if (email === credentials.admin.email && password === credentials.admin.password) {
-      localStorage.setItem("userRole", "admin");
-      localStorage.setItem("isAuthenticated", "true");
-      toast({ title: "Welcome Admin!", description: "Redirecting to admin dashboard..." });
-      setTimeout(() => navigate("/admin-dashboard"), 1000);
-    } else if (email === credentials.fresher.email && password === credentials.fresher.password) {
-      localStorage.setItem("userRole", "fresher");
-      localStorage.setItem("isAuthenticated", "true");
-      toast({ title: "Welcome Fresher!", description: "Redirecting to your dashboard..." });
-      setTimeout(() => navigate("/fresher-dashboard"), 1000);
-    } else {
-      toast({ 
-        title: "Login Failed", 
-        description: "Invalid credentials. Please try again.",
+    
+    if (!email || !password) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
         variant: "destructive"
       });
+      return;
     }
+
+    setIsLoading(true);
     
-    setIsLoading(false);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        // Check if user is admin by checking email domain or metadata
+        const isAdmin = data.user.email?.includes('admin') || data.user.user_metadata?.role === 'admin';
+        
+        // Redirect based on role
+        if (isAdmin) {
+          navigate('/admin-dashboard');
+          toast({ title: "Welcome Admin!", description: "Redirecting to admin dashboard..." });
+        } else {
+          navigate('/fresher-dashboard');
+          toast({ title: "Welcome!", description: "Redirecting to your dashboard..." });
+        }
+      }
+      
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast({
+        title: "Login Failed",
+        description: error.message || "Invalid email or password",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -106,15 +123,15 @@ const Login = () => {
               disabled={isLoading}
               variant="training"
             >
+              {isLoading && <RefreshCw className="w-4 h-4 mr-2 animate-spin" />}
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
           
           <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-            <h4 className="font-medium text-sm mb-2">Demo Credentials:</h4>
-            <div className="text-xs space-y-1">
-              <div><strong>Admin:</strong> admin@mavericks.com / admin123</div>
-              <div><strong>Fresher:</strong> fresher@mavericks.com / fresher123</div>
+            <h4 className="font-medium text-sm mb-2">Login Instructions:</h4>
+            <div className="text-xs text-muted-foreground">
+              Use the email and password provided by your admin to access your training dashboard.
             </div>
           </div>
         </CardContent>

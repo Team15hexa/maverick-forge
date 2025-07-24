@@ -2,24 +2,92 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CheckCircle, Clock, AlertCircle, Award, BookOpen, Code, FileText, Trophy } from "lucide-react";
+import { ArrowLeft, CheckCircle, Clock, AlertCircle, Award, BookOpen, Code, FileText, Trophy, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import Quiz from "@/components/Quiz";
 
 const FresherDashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [overallProgress, setOverallProgress] = useState(0);
   const [showQuiz, setShowQuiz] = useState(false);
-
-  // Mock data for fresher progress
-  const fresherData = {
-    name: "Alex Johnson",
-    id: "MAV-2024-001",
-    department: "Software Engineering",
-    joinDate: "January 15, 2024",
+  const [fresherData, setFresherData] = useState({
+    name: "Loading...",
+    id: "",
+    department: "",
+    joinDate: "",
     currentPhase: "Foundation Training"
+  });
+  const [quizStats, setQuizStats] = useState({
+    completed: 0,
+    total: 20,
+    avgScore: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Fetch fresher data from database
+  const fetchFresherData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+
+      // Get fresher profile
+      const { data: fresher, error: fresherError } = await supabase
+        .from('freshers')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (fresherError) throw fresherError;
+
+      // Get quiz results
+      const { data: quizResults, error: quizError } = await supabase
+        .from('quiz_results')
+        .select('*')
+        .eq('fresher_id', fresher.id);
+
+      if (quizError) throw quizError;
+
+      const completedQuizzes = quizResults?.filter(q => q.completed) || [];
+      const avgScore = completedQuizzes.length > 0 
+        ? completedQuizzes.reduce((sum, q) => sum + q.score, 0) / completedQuizzes.length 
+        : 0;
+
+      setFresherData({
+        name: fresher.name,
+        id: `MAV-${fresher.id.slice(0, 8)}`,
+        department: fresher.department,
+        joinDate: new Date(fresher.enrollment_date).toLocaleDateString(),
+        currentPhase: "Foundation Training"
+      });
+
+      setQuizStats({
+        completed: completedQuizzes.length,
+        total: 20,
+        avgScore: Math.round(avgScore * 100) / 100
+      });
+
+    } catch (error: any) {
+      console.error('Error fetching fresher data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load your profile data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchFresherData();
+  }, []);
 
   const trainingModules = [
     {
@@ -96,14 +164,44 @@ const FresherDashboard = () => {
     }
   };
 
-  const handleQuizComplete = (score: number, totalQuestions: number) => {
-    // Update the daily quiz module status
-    const updatedModules = trainingModules.map(module => 
-      module.title === "Daily Quiz" 
-        ? { ...module, status: "completed", score: `${score}/${totalQuestions}`, lastUpdated: "Just now" }
-        : module
-    );
-    console.log("Quiz completed with score:", score, "/", totalQuestions);
+  const handleQuizComplete = async (score: number, totalQuestions: number) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: fresher } = await supabase
+        .from('freshers')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (fresher) {
+        await supabase
+          .from('quiz_results')
+          .insert({
+            fresher_id: fresher.id,
+            score: score,
+            total_questions: totalQuestions,
+            correct_answers: score,
+            completed: true
+          });
+
+        // Refresh data
+        fetchFresherData();
+        
+        toast({
+          title: "Quiz Completed!",
+          description: `You scored ${score}/${totalQuestions}`,
+        });
+      }
+    } catch (error) {
+      console.error('Error saving quiz result:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save quiz result",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleStartQuiz = () => {
@@ -113,6 +211,17 @@ const FresherDashboard = () => {
   const handleCloseQuiz = () => {
     setShowQuiz(false);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <RefreshCw className="w-4 h-4 animate-spin" />
+          Loading your dashboard...
+        </div>
+      </div>
+    );
+  }
 
   if (showQuiz) {
     return <Quiz onComplete={handleQuizComplete} onClose={handleCloseQuiz} />;
@@ -251,10 +360,10 @@ const FresherDashboard = () => {
                 <CardTitle className="text-lg">Quick Stats</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Quizzes Completed</span>
-                  <span className="font-medium">15/20</span>
-                </div>
+                 <div className="flex justify-between">
+                   <span className="text-sm text-muted-foreground">Quizzes Completed</span>
+                   <span className="font-medium">{quizStats.completed}/{quizStats.total}</span>
+                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Coding Challenges</span>
                   <span className="font-medium">8/12</span>
@@ -263,10 +372,10 @@ const FresherDashboard = () => {
                   <span className="text-sm text-muted-foreground">Assignments</span>
                   <span className="font-medium">5/8</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Certifications</span>
-                  <span className="font-medium">2/3</span>
-                </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Average Score</span>
+                    <span className="font-medium">{quizStats.avgScore}/100</span>
+                  </div>
               </CardContent>
             </Card>
 

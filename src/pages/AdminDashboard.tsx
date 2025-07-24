@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import AddFresherDialog from "@/components/AddFresherDialog";
 
 interface Fresher {
   id: string;
@@ -57,6 +58,7 @@ const AdminDashboard = () => {
   const [completionFilter, setCompletionFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showAddFresher, setShowAddFresher] = useState(false);
 
   // System metrics (calculated from real data)
   const [systemMetrics, setSystemMetrics] = useState({
@@ -359,15 +361,8 @@ const AdminDashboard = () => {
           break;
           
         case 'add-fresher':
-          // Add activity log
-          await supabase
-            .from('activities')
-            .insert({
-              type: 'system',
-              description: 'New fresher registration initiated',
-              admin_id: null
-            });
-          break;
+          setShowAddFresher(true);
+          return; // Don't show success toast for this action
           
         case 'send-notification':
           // Log notification activity
@@ -825,6 +820,13 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
+      
+      {/* Add Fresher Dialog */}
+      <AddFresherDialog 
+        open={showAddFresher}
+        onOpenChange={setShowAddFresher}
+        onSuccess={fetchFreshers}
+      />
     </div>
   );
 };
